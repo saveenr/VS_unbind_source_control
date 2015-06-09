@@ -118,7 +118,7 @@ namespace VSUnbindSourceControl
 
                 if (line_trimmed.StartsWith("GlobalSection(SourceCodeControl)") 
                     || line_trimmed.StartsWith("GlobalSection(TeamFoundationVersionControl)")
-                    || System.Text.RegularExpressions.Regex.IsMatch(line_trimmed, "GlobalSection(.*Version.*Control", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                    || System.Text.RegularExpressions.Regex.IsMatch(line_trimmed, @"GlobalSection\(.*Version.*Control", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                 {
                     // this means we are starting a Source Control Section
                     // do not copy the line to output
