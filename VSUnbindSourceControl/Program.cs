@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using System.Xml;
 
 // 2013-08-03 - Fixed Regex.IsMatch parameters
 // 2013-08-03 - No longer try to parse VDPROJ files
@@ -73,20 +74,10 @@ namespace VSUnbindSourceControl
                 return;
             }
 
-            foreach (var file in sln_files_to_modify)
-            {
-                ModifySolutionFile(file);
-            }
+            ProcessFile(ModifySolutionFile, sln_files_to_modify);
+            ProcessFile(ModifyProjectFile, proj_files_to_modify);
+            ProcessFile(DeleteFile, scc_files_to_delete);
 
-            foreach (var file in proj_files_to_modify)
-            {
-                ModifyProjectFile(file);
-            }
-
-            foreach (var file in scc_files_to_delete)
-            {
-                DeleteFile(file);
-            }
             System.Console.WriteLine("Done.");
         }
 
@@ -106,7 +97,10 @@ namespace VSUnbindSourceControl
             var output_lines = new List<string>();
 
             bool in_sourcecontrol_section = false;
-            var lines = System.IO.File.ReadAllLines(filename);
+
+            Encoding encoding;
+            var lines = ReadAllLines(filename, out encoding);
+
             foreach (string line in lines)
             {
                 var line_trimmed = line.Trim();
@@ -148,7 +142,7 @@ namespace VSUnbindSourceControl
             }
 
             // Write the file back out
-            System.IO.File.WriteAllLines(filename,output_lines);
+            System.IO.File.WriteAllLines(filename, output_lines, encoding);
 
             // Restore the original file attributes
             System.IO.File.SetAttributes(filename, original_attr);
@@ -163,10 +157,16 @@ namespace VSUnbindSourceControl
             }
 
             Console.WriteLine("Modifying Project : {0}", filename);
-            
-            // Load the Project file
-            var doc = System.Xml.Linq.XDocument.Load(filename);
 
+            // Load the Project file
+            XDocument doc = null;
+            Encoding encoding = new UTF8Encoding(false);
+            using (StreamReader reader = new StreamReader(filename, encoding))
+            {
+                doc = System.Xml.Linq.XDocument.Load(reader);
+                encoding = reader.CurrentEncoding;
+            }
+                
             // Modify the Source Control Elements
             RemoveSCCElementsAttributes(doc.Root);
             
@@ -174,8 +174,18 @@ namespace VSUnbindSourceControl
             var original_attr = System.IO.File.GetAttributes(filename);
             System.IO.File.SetAttributes(filename, System.IO.FileAttributes.Normal);
 
+            //if the original document doesn't include the encoding attribute 
+            //in the declaration then do not write it to the outpu file.
+            if (String.IsNullOrEmpty(doc.Declaration.Encoding))
+                encoding = null;
+            
+            //else if its not utf (i.e. utf-8, utf-16, utf32) format which use a BOM
+            //then use the encoding identified in the XML file.
+            else if(!doc.Declaration.Encoding.StartsWith("utf", StringComparison.OrdinalIgnoreCase))
+                encoding = Encoding.GetEncoding(doc.Declaration.Encoding);
+                
             // Write out the XML
-            using (var writer = new System.Xml.XmlTextWriter(filename, Encoding.UTF8))
+            using (var writer = new System.Xml.XmlTextWriter(filename, encoding))
             {
                 writer.Formatting = System.Xml.Formatting.Indented;
                 doc.Save(writer);
@@ -201,6 +211,70 @@ namespace VSUnbindSourceControl
         {
             System.IO.File.SetAttributes(filename, System.IO.FileAttributes.Normal);
             System.IO.File.Delete(filename);
+        }
+
+        /// <summary>
+        /// Reads all the lines from a test file into an array.
+        /// </summary>
+        /// <param name="path">The file to open for reading.</param>
+        /// <param name="encoding">The file encoding.</param>
+        /// <returns>A string array containing all the lines from the file</returns>
+        /// <remarks>UTF-8 encoded files optionally include a byte order mark (BOM) at the beginning of the file.
+        /// If the mark is detected by the StreamReader class, it will modify it's encoding property so that it
+        /// reflects that file was written with a BOM. However, if no BOM is detected the StreamReader will not
+        /// modify it encoding property. The determined UTF-8 encoding (UTF-8 with BOM or UTF-8 without BOM) is
+        /// returned as an output parameter.
+        /// </remarks>
+        private static string[] ReadAllLines(string path, out Encoding encoding)
+        {
+            List<string> lines = new List<string>();
+
+            Encoding encodingNoBom = new UTF8Encoding(false);
+            using(StreamReader reader = new StreamReader(path, encodingNoBom))
+            {
+                while (!reader.EndOfStream)
+                {
+                    lines.Add(reader.ReadLine());
+                }
+
+                encoding = reader.CurrentEncoding;
+            }
+
+            return lines.ToArray();
+        }
+
+        /// <summary>
+        /// Processes a list of files based on the porcessing method.
+        /// </summary>
+        /// <param name="processMethod">The method for processing the files.</param>
+        /// <param name="files">The list of files.</param>
+        private static void ProcessFile(Action<string> processMethod, IEnumerable<string> files)
+        {
+            foreach (var file in files)
+            {
+                try
+                {
+                    processMethod(file);
+                }
+                catch(Exception e)
+                {
+                    string message = String.Format("Unable to process {0}: {1}", file, e.Message);
+                    WriteLine(ConsoleColor.Red, message);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Writes a line to console in the specified foreground color.
+        /// </summary>
+        /// <param name="foregroundColor">The foreground color.</param>
+        /// <param name="value">The value that is written to the console.</param>
+        private static void WriteLine(ConsoleColor foregroundColor, string value)
+        {
+            ConsoleColor current = Console.ForegroundColor;
+            Console.ForegroundColor = foregroundColor;
+            Console.WriteLine(value);
+            Console.ForegroundColor = current;
         }
     }
 }
