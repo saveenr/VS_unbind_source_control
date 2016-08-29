@@ -176,7 +176,7 @@ namespace VSUnbindSourceControl
 
             //if the original document doesn't include the encoding attribute 
             //in the declaration then do not write it to the outpu file.
-            if (String.IsNullOrEmpty(doc.Declaration.Encoding))
+            if (doc.Declaration == null || String.IsNullOrEmpty(doc.Declaration.Encoding))
                 encoding = null;
             
             //else if its not utf (i.e. utf-8, utf-16, utf32) format which use a BOM
