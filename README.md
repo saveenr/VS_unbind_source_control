@@ -1,6 +1,5 @@
 # VS Unbind Source Control
 
-
 VS-Unbind-Source-Control is a simple way to strip out all the source control bindings from your Visual Studio solution and project files.
 
 ## SCENARIO
@@ -9,11 +8,15 @@ Have you ever sent your Visual Studio solution to someone and when they open it 
 
 ## USAGE
 
-First, Copy your solution to a new directory. Why copy? Because the tool modify files in place.
+The tool works on a directory - and **MODIFIES FILES IN-PLACE**. 
 
-Then, Run this command: 
+So, first, copy your solution to a new directory. 
 
-  VSUnbindSourceControl.exe d:\myfolder  
+Then, eun this command: 
+
+```
+VSUnbindSourceControl.exe d:\myfolder  
+```
 
 ## DISCLAIMER
 
@@ -26,11 +29,11 @@ Use the tool at your own risk. By downloading or using the tool you agree to its
 
 # ORIGINS
 
-The code is originally based on this project by Jake Opines. The significant changes here include
+The project builds on code by Jake Opines. The significant changes in this project include:
 
-* Much simplified I/O
-* More specific cleanup of Project file XML
-* Use of System.Xml.Linq instead of System.Xml
+* Simplified I/O
+* More specific cleanup of project file XML
+* Uses System.Xml.Linq instead of System.Xml
 * Indented formatting of output project files
-* Compiles using VS2012 and using .NET Framework 4.0
- 
+* Built using Visual Studio 2012
+* Compiles .NET Framework 4.0
