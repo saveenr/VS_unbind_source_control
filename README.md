@@ -27,7 +27,7 @@ Use the tool at your own risk. By downloading or using the tool you agree to its
 * I've only tried this against CSharp projects
 * I've only tried this using Visual Studio 2010 and Visual Studio 2012 
 
-# Origins
+## Origins
 
 The project builds on code by Jake Opines. The significant changes in this project include:
 
