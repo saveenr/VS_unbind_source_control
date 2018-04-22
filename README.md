@@ -8,11 +8,11 @@ Have you ever sent your Visual Studio solution to someone and when they open it 
 
 ## Usage
 
-The tool works on a directory - and **MODIFIES FILES IN-PLACE**. 
+The tool works on a directory and **MODIFIES AND DELETES FILES IN-PLACE**. 
 
-So, first, copy your solution to a new directory. 
+So to prevent the loss of files, first, copy your solution to a new directory. 
 
-Then, eun this command: 
+Then, run this command: 
 
 ```
 VSUnbindSourceControl.exe d:\myfolder  
